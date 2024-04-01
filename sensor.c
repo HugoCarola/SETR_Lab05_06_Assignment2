@@ -17,6 +17,10 @@ static bool FRAME_IN_PROGRESS;      // Flag indicating ongoing frame reception
 
 sensor_data data = {0,0,400};
 
+data.temp_count = 0;
+data.humi_count = 0;
+data.airq_count = 0;
+
 
 /**
  * @brief Inserts a new element into the DLL.
@@ -39,12 +43,42 @@ int CMD_DATA(uint8_t tx)
         if (tx == FRAME_END)
         {
             /* verify checksum */
-            uint8_t rx_CS = rx_BUFFER[rx_index - 1];
-            uint8_t calc_CS = calc_checksum(rx_BUFFER, rx_index-2) ;
-        
-            if (rx_CS == calc_CS)
+            uint8_t rx_CS[3]; //array to store the rx checksum characters 
+            for (int i = 0; i < 3; i++){
+                rx_CS[i] = rx_BUFFER[rx_index - 3 + i];
+            }
+            uint8_t calc_CS = calc_checksum(rx_BUFFER, rx_index-4);
+
+            //conversion to ASCII (3 digits)
+            char calc_CS_str[4];
+            sprintf(calc_CS_str,"%03u", calc_CS);
+
+            //Compare checksums
+            bool CS_match = true;
+            for (int i = 0; i < 3; i++){
+                if (rx_CS[i] != calc_CS_str[i]){
+                CS_match = false;
+                }
+            } 
+            if (CS_match)
             {
-                command_t cmd;
+                command_t cmd = select_option(rx_BUFFER[1]);
+
+                switch (cmd){
+
+                    case 'A':
+                        break;
+                    case 'P':
+
+                        printf("Select sensor reading to show:/n");
+                        command_t cmd_option = Single_measure_Select(rx_BUFFER[2]);
+
+                        break;
+                    case 'L':
+                        break;
+                    case 'R': 
+                        break;    
+                }
               
             }
             
@@ -64,9 +98,9 @@ int CMD_DATA(uint8_t tx)
  */
 
 
-command_t Single_measure_Select(uint8_t cmd){
+command_t Single_measure_Select(uint8_t cmd_option){
 
-  switch (cmd) {
+  switch (cmd_option) {
                 case 'H':
                     return CMD_HUMIDITY;
                 break;
@@ -96,5 +130,5 @@ unsigned char calc_checksum(uint8_t *data, uint8_t size){
     for (int i = 0; i<size; i++){
         checksum+=data[i];
     }
-    return checksum;
+    return checksum % 256;   //performs modulo 256 operation
 }

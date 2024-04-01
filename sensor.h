@@ -29,9 +29,12 @@ typedef enum {
 
 typedef struct 
 {
-    char temperature[3];
-    char humidity[3];
-    char air_quality[5];
+    char temperature[20];
+    int temp_count;
+    char humidity[20];
+    int humi_count;
+    char air_quality[20];
+    int airq_count;
 }sensor_data;
 
 
